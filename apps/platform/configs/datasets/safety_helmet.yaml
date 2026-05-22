@@ -1,0 +1,25 @@
+path: F:\python_projects\class\ODPlatform\data
+train: train/images
+val: val/images
+test: test/images
+nc: 3
+names:
+  0: head
+  1: helmet
+  2: person
+odp_meta:
+  dataset: safety_helmet
+  source_format: pascal_voc
+  task: detect
+  created_at: '2026-05-22T16:19:23'
+  split:
+    train_rate: 0.8
+    val_rate: 0.1
+    test_rate: 0.1
+    random_state: 42
+    counts:
+      train: 6
+      val: 1
+      test: 1
+      total: 8
+  schema_version: 1

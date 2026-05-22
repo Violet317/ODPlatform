@@ -52,3 +52,11 @@ coverage.xml
 
 # pytest
 .pytest_cache/
+
+# Tool metadata (reset/doctor audit logs)
+.odp-meta/
+
+# Archives
+*.rar
+*.zip
+*.7z

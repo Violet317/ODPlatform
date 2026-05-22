@@ -1,19 +1,11 @@
-# ODPlatform - Core Engine
+# ODPlatform — Platform 引擎
 
-The core object detection platform providing configuration management, data processing, training, evaluation, and inference capabilities.
+目标检测开发平台核心层，提供数据流水线 (data_pipeline) 和命令行工具。
 
-## Installation
+## 命令
 
-```bash
-pip install -e .
-```
-
-## Usage
-
-```bash
-odp-trans --help
-odp-validate --help
-odp-train --help
-odp-val --help
-odp-infer --help
-```
+| 命令 | 说明 |
+|---|---|
+| `odp-init` | 初始化项目运行时目录 |
+| `odp-reset` | 重置运行时产物 |
+| `odp-transform` | 数据集格式转换 + 划分 + yaml 生成 |

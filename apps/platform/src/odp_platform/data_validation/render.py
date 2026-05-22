@@ -1,0 +1,131 @@
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+from typing import Optional
+
+from odp_platform.data_validation.registry import CheckResult
+from odp_platform.data_validation.report import ValidationReport
+from odp_platform.data_validation.snapshot import DatasetSnapshot
+
+
+H1_LINE = "=" * 72
+H2_LINE = "-" * 72
+
+
+def render_to_logger(
+    report: ValidationReport,
+    logger: logging.Logger,
+    report_path: Optional[Path] = None,
+) -> None:
+    _render_header(report, logger)
+    _render_dataset_summary(report.snapshot, logger)
+    _render_check_overview(report.results, logger)
+
+    if report.failed_results:
+        _render_failure_details(report.failed_results, logger)
+
+    _render_footer(report_path, logger)
+
+
+def _render_header(report: ValidationReport, logger: logging.Logger) -> None:
+    logger.info(H1_LINE)
+    logger.info("                       YOLO 数据集验证报告")
+    logger.info(H1_LINE)
+    logger.info(f"  run_id   {report.run_id}")
+    logger.info(f"  yaml     {report.yaml_path}")
+    logger.info(
+        f"  task     {report.snapshot.task_type:8s}  "
+        f"耗时  {report.duration_seconds:.2f}s  "
+        f"severity  {report.overall_severity}"
+    )
+
+
+def _render_dataset_summary(snapshot: DatasetSnapshot, logger: logging.Logger) -> None:
+    logger.info(H2_LINE)
+    logger.info("  \u25b8 数据集摘要")
+
+    if snapshot.class_names:
+        names_str = ", ".join(snapshot.class_names)
+        logger.info(f"    类别:  {names_str}  (nc={snapshot.nc})")
+    else:
+        logger.info("    类别:  (未取到 \u2014 yaml_schema 应已报错)")
+
+    if not snapshot.stats_per_split:
+        logger.info("    (无任何 split 可统计)")
+        return
+
+    for split, stat in snapshot.stats_per_split.items():
+        logger.info(
+            f"    {split:6s}:  "
+            f"{stat.image_count:>6,} 张  /  "
+            f"{stat.annotated_count:>6,} 标注  /  "
+            f"{stat.total_instances:>6,} 实例"
+        )
+
+
+def _render_check_overview(results: list, logger: logging.Logger) -> None:
+    logger.info(H2_LINE)
+    logger.info("  \u25b8 检查项一览")
+    for r in results:
+        logger.info(f"    [{r.severity:7s}]  {r.name:18s}  {r.summary}")
+
+
+def _render_failure_details(failed: list, logger: logging.Logger) -> None:
+    logger.info(H2_LINE)
+    logger.info("  \u25b8 失败详情")
+    for r in failed:
+        _render_one_check_details(r, logger)
+
+
+def _render_one_check_details(r: CheckResult, logger: logging.Logger) -> None:
+    logger.info("")
+    logger.info(f"    >> {r.name}  [{r.severity}]")
+    det = r.details
+
+    if r.name == "yaml_schema" and "problems" in det:
+        for p in det["problems"]:
+            logger.info(f"        - {p}")
+
+    elif r.name == "pair_existence":
+        mps = det.get("missing_per_split", {})
+        if mps:
+            parts = ", ".join(f"{s}={n}" for s, n in mps.items())
+            logger.info(f"        各 split 缺失:  {parts}")
+        ex = det.get("missing_examples", {})
+        for split, paths in ex.items():
+            logger.info(f"        示例 ({split}, 前 {min(5, len(paths))} 条):")
+            for p in paths[:5]:
+                logger.info(f"          {p}")
+
+    elif r.name == "label_format":
+        kinds = det.get("error_kinds", {})
+        if kinds:
+            parts = ", ".join(f"{k}={v}" for k, v in kinds.items())
+            logger.info(f"        错误类型:  {parts}")
+        for e in det.get("errors_preview", [])[:5]:
+            logger.info(
+                f"        - {Path(e['file']).name}:{e['line']}  "
+                f"{e['error_type']}  {e.get('detail', '')}"
+            )
+
+    elif r.name == "split_uniqueness" and det.get("overlaps"):
+        for pair_a, overlap_map in det["overlaps"].items():
+            for pair_b, stems in overlap_map.items():
+                logger.info(
+                    f"        {pair_a} \u2194 {pair_b}:  "
+                    f"{len(stems)} 张重复"
+                )
+                for stem in stems[:5]:
+                    logger.info(f"          {stem}")
+
+    else:
+        if "reason" in det:
+            logger.info(f"        reason: {det['reason']}")
+
+
+def _render_footer(report_path: Optional[Path], logger: logging.Logger) -> None:
+    logger.info(H2_LINE)
+    if report_path is not None:
+        logger.info(f"  详细报告:  {report_path}")
+    logger.info(H1_LINE)

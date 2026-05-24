@@ -283,12 +283,10 @@ config_manager/
 
 ### 启动方式
 
-通过 Python 直启动（推荐方式，兼容 Gradio 6.x）：
+通过 Python 直接启动（推荐方式）：
 
 ```bash
-conda activate odp-gpu
-cd F:\python_projects\class\ODPlatform
-python -c "import sys; sys.path.insert(0, 'apps/platform/src'); from odp_platform.webui import create_app; create_app().launch(server_name='0.0.0.0', server_port=7860)"
+python apps\platform\src\odp_platform\webui\app.py
 ```
 
 安装后也可通过 CLI 启动：
@@ -297,7 +295,8 @@ python -c "import sys; sys.path.insert(0, 'apps/platform/src'); from odp_platfor
 odp-webui
 ```
 
-> **注意**：`pyproject.toml` 中依赖写的是 `gradio>=5.0,<6.0`，但实际环境安装的是 Gradio 6.14.0（版本约束宽松可装）。`theme`/`css` 参数在 `gr.Blocks()` 中仍可用，Gradio 6.x 只会报 `UserWarning`，不影响功能。
+> **注意**：`pyproject.toml` 中依赖写的是 `gradio>=5.0,<6.0`，但实际环境安装的是 Gradio 6.14.0（版本约束宽松可装）。`theme`/`css` 参数在 `gr.Blocks()` 中仍可用，Gradio 6.x 只会报 `UserWarning`，不影响功能。  
+> **不要**用 `create_app().launch()` 方式启动，因为缺少 `allowed_paths` 参数会导致壁纸等静态资源无法加载。
 
 ### 访问地址
 

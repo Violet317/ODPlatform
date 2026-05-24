@@ -204,17 +204,17 @@ python -m pytest tests -v
 
 ### 启动方式
 
+入口文件：`apps/platform/src/odp_platform/webui/app.py`
+
+核心函数：`create_app()` → 返回 `gr.Blocks` 对象 → 启动应使用 `main()`
+
 ```bash
 conda activate odp-gpu
 cd F:\python_projects\class\ODPlatform
-python -c "import sys; sys.path.insert(0, 'apps/platform/src'); from odp_platform.webui import create_app; app = create_app(); app.launch(server_name='0.0.0.0', server_port=7860)"
+python apps\platform\src\odp_platform\webui\app.py
 ```
 
-注意 Gradio 版本兼容：当前 `pyproject.toml` 写的是 `gradio>=5.0,<6.0`，实际环境安装了 6.14.0。Gradio 6.x 的兼容差异：
-- `theme` / `css` 参数在 `gr.Blocks()` 中仍可用（只报 `UserWarning`）
-- 如果要消除 warning，可以把 `theme` 和 `css` 移到 `launch()` 方法中
-
-前端的 CSS 液态玻璃效果作者为 UI 工程师，不要随意修改。
+> ⚠️ **不要**用 `create_app().launch()` 方式启动——`main()` 中传了 `allowed_paths=[str(ASSETS_DIR)]`，缺少此参数会导致壁纸 PNG 等静态资源无法加载，液态玻璃效果完全失效。
 
 ---
 

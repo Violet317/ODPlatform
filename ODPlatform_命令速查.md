@@ -279,7 +279,59 @@ config_manager/
 
 ---
 
-## 六、集成命令（D3 + D4 + D5 串联）
+## 六、WebUI — Gradio 前端
+
+### 启动方式
+
+通过 Python 直启动（推荐方式，兼容 Gradio 6.x）：
+
+```bash
+conda activate odp-gpu
+cd F:\python_projects\class\ODPlatform
+python -c "import sys; sys.path.insert(0, 'apps/platform/src'); from odp_platform.webui import create_app; create_app().launch(server_name='0.0.0.0', server_port=7860)"
+```
+
+安装后也可通过 CLI 启动：
+
+```bash
+odp-webui
+```
+
+> **注意**：`pyproject.toml` 中依赖写的是 `gradio>=5.0,<6.0`，但实际环境安装的是 Gradio 6.14.0（版本约束宽松可装）。`theme`/`css` 参数在 `gr.Blocks()` 中仍可用，Gradio 6.x 只会报 `UserWarning`，不影响功能。
+
+### 访问地址
+
+启动后浏览器打开：`http://localhost:7860`
+
+### 功能 Tab
+
+| Tab | 功能 | 源文件 |
+|-----|------|--------|
+| Dashboard | 项目概览、实验状态 | `webui/dashboard.py` |
+| 数据集浏览 | 查看图片 + 标注 | `webui/dataset_browser.py` |
+| 训练 | 配置参数 + 启动训练 | `webui/training_tab.py` |
+| 模型演示 | 加载模型 + 推理可视化 | `webui/model_demo.py` |
+| 数据校验 | 运行质检 + 查看报告 | `webui/validation_tab.py` |
+| 配置管理 | 生成/验证/追踪配置 | `webui/config_tab.py` |
+
+### 架构说明
+
+```
+webui/
+├── app.py               # create_app() + main() 入口
+├── dashboard.py         # Dashboard Tab
+├── dataset_browser.py   # 数据集浏览 Tab
+├── training_tab.py      # 训练 Tab
+├── model_demo.py        # 模型演示 Tab
+├── validation_tab.py    # 数据校验 Tab
+├── config_tab.py        # 配置管理 Tab
+├── utils.py             # 通用 UI 工具函数
+└── assets/              # 静态资源（壁纸等）
+```
+
+---
+
+## 七、集成命令（D3 + D4 + D5 串联）
 
 ### 端到端训练准备
 
@@ -297,7 +349,7 @@ odp-train --dry-run
 
 ---
 
-## 七、回归测试
+## 八、回归测试
 
 ```bash
 # 从 apps/platform/src 目录运行
@@ -307,7 +359,7 @@ python -m pytest tests -v
 
 ---
 
-## 八、关键目录结构
+## 九、关键目录结构
 
 ```
 ODPlatform/
@@ -345,6 +397,15 @@ ODPlatform/
 │   │   │   ├── validator.py
 │   │   │   ├── tracer.py
 │   │   │   └── generators/
+│   │   ├── webui/                  # Gradio 前端（PR #1）
+│   │   │   ├── app.py              # create_app() 入口
+│   │   │   ├── dashboard.py
+│   │   │   ├── dataset_browser.py
+│   │   │   ├── training_tab.py
+│   │   │   ├── model_demo.py
+│   │   │   ├── validation_tab.py
+│   │   │   ├── config_tab.py
+│   │   │   └── utils.py
 │   │   └── __init__.py
 │   ├── configs/
 │   │   ├── datasets/               # 数据集 yaml
@@ -358,5 +419,12 @@ ODPlatform/
 │       ├── data_validation/        # D4 质检报告
 │       └── config_snapshots/       # D5 配置快照
 ├── scripts/
-└── ODPlatform_命令速查.md
+├── docs/
+│   ├── architecture/                # ADR 决策记录
+│   ├── srs/                         # 需求规格
+│   ├── teaching/                    # 教学讲义
+│   ├── ODPlatform_团队协作指南.md
+│   ├── ODPlatform_答辩演练问题集.md
+│   ├── ODPlatform_AI接手指南.md
+│   └── ODPlatform_命令速查.md       # ← 就是这个文件
 ```

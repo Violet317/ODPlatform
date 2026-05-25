@@ -12,7 +12,7 @@ def _default_output(task: str) -> str:
     return str(CONFIGS_DIR / f"{task}_config.yaml")
 
 
-def _generate_config(task: str, output_path: str, force: bool) -> tuple[str, gr.update]:
+def _generate_config(task: str, output_path: str, force: bool):
     target = output_path.strip() or _default_output(task)
     args = ["generate", "--task", task, "--output", target]
     if force:
@@ -44,7 +44,7 @@ def _task_changed(task: str) -> str:
     return _default_output(task)
 
 
-def _refresh_configs() -> gr.update:
+def _refresh_configs():
     configs = list_config_files()
     return gr.update(choices=configs, value=configs[0] if configs else None)
 

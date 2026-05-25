@@ -23,9 +23,9 @@ def _run_validation(
     return run_python_module("odp_platform.cli.validate_data", args, timeout=600).render()
 
 
-def _refresh_datasets() -> gr.update:
+def _refresh_datasets():
     datasets = list_dataset_names()
-    return gr.update(choices=datasets, value=datasets[0] if datasets else None)
+    return gr.update(choices=datasets, value=datasets[0] if datasets else None, interactive=True)
 
 
 def create_validation_ui() -> None:

@@ -40,10 +40,12 @@ class CommandResult:
             f"$ {' '.join(self.command)}",
             f"exit code: {self.returncode}",
         ]
-        if self.stdout.strip():
-            lines.extend(["", "[stdout]", self.stdout.strip()])
-        if self.stderr.strip():
-            lines.extend(["", "[stderr]", self.stderr.strip()])
+        stdout = self.stdout or ""
+        stderr = self.stderr or ""
+        if stdout.strip():
+            lines.extend(["", "[stdout]", stdout.strip()])
+        if stderr.strip():
+            lines.extend(["", "[stderr]", stderr.strip()])
         return "\n".join(lines)
 
 
@@ -68,6 +70,8 @@ def run_python_module(
             env=platform_env(),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
             check=False,
         )

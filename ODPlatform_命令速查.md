@@ -281,22 +281,24 @@ config_manager/
 
 ## 六、WebUI — Gradio 前端
 
-### 启动方式
-
-通过 Python 直接启动（推荐方式）：
+### CLI 命令
 
 ```bash
+# 启动 WebUI（自动启动本地后端 + 数据库）
+odp-webui
+
+# 仅启动 FastAPI 后端（单独进程，供 Dashboard 使用）
+odp-backend
+
+# 或通过 Python 直接启动
 python apps\platform\src\odp_platform\webui\app.py
 ```
 
-安装后也可通过 CLI 启动：
-
-```bash
-odp-webui
-```
-
-> **注意**：`pyproject.toml` 中依赖写的是 `gradio>=5.0,<6.0`，但实际环境安装的是 Gradio 6.14.0（版本约束宽松可装）。`theme`/`css` 参数在 `gr.Blocks()` 中仍可用，Gradio 6.x 只会报 `UserWarning`，不影响功能。  
-> **不要**用 `create_app().launch()` 方式启动，因为缺少 `allowed_paths` 参数会导致壁纸等静态资源无法加载。
+> **注意**：
+> - `odp-webui` 在启动 Gradio 的同时，会**自动启动** FastAPI + SQLite 后端（subprocess）。Dashboard Tab 需要后端连接才能显示实验数据。
+> - 后端可独立运行：`odp-backend`，此时 WebUI 不会自动启动后端。
+> - `pyproject.toml` 中依赖写的是 `gradio>=5.0,<6.0`，但实际环境安装的是 Gradio 6.14.0（版本约束宽松可装）。`theme`/`css` 参数在 `gr.Blocks()` 中仍可用，Gradio 6.x 只会报 `UserWarning`，不影响功能。
+> - **不要**用 `create_app().launch()` 方式启动，因为缺少 `allowed_paths` 参数会导致壁纸等静态资源无法加载。
 
 ### 访问地址
 
@@ -330,7 +332,81 @@ webui/
 
 ---
 
-## 七、集成命令（D3 + D4 + D5 串联）
+## 七、Backend API — FastAPI 后端
+
+### 启动
+
+```bash
+# 方式一：WebUI 自动启动（推荐）
+odp-webui
+
+# 方式二：独立启动
+odp-backend
+```
+
+后端默认监听 `http://localhost:8888`
+
+### API 端点
+
+| 方法 | 路径 | 功能 |
+|------|------|------|
+| GET | `/api/v1/experiments` | 获取实验列表 |
+| POST | `/api/v1/experiments` | 创建实验 |
+| GET | `/api/v1/experiments/{id}/epochs` | 获取实验的 epoch 列表 |
+| GET | `/api/v1/experiments/{id}/models` | 获取实验的模型列表 |
+| GET | `/api/v1/experiments/{id}/quality` | 获取实验的质检报告列表 |
+| GET | `/api/v1/experiments/{id}/quality/{type}` | 获取特定类型质检报告 |
+| GET | `/api/v1/health` | 健康检查（Dashboard 用） |
+
+### 数据库（SQLite）
+
+数据库文件位于：`data/backend/odp.db`
+
+包含 4 张表：
+
+| 表 | 说明 |
+|----|------|
+| `experiments` | 实验记录 |
+| `epochs` | 训练轮次记录 |
+| `models` | 模型记录 |
+| `quality_reports` | 质检报告 |
+
+---
+
+## 八、全链路验证指南
+
+启动后按以下流程验证各功能链路是否正常：
+
+```bash
+# 1. 启动
+odp-webui
+
+# 2. 打开 http://localhost:7860
+```
+
+### 验证清单
+
+| 步骤 | Tab | 操作 | 预期结果 |
+|------|-----|------|---------|
+| 1 | Dashboard | 等待加载 | 显示"后端在线"、实验统计（0 条） |
+| 2 | 数据集浏览 | 选择数据集 → 切换图片 | 下拉框可选、图片 + 标注正常渲染 |
+| 3 | 模型演示 | 选择模型 → 加载 → 上传图片推理 | 推理结果可视化、框 + 标签正确 |
+| 4 | 数据校验 | 选择数据集 → 运行质检 | 4 个 check 全部通过 |
+| 5 | 配置管理 | 生成训练配置 → 验证 | 配置生成成功、验证通过 |
+| 6 | 训练 | 配置参数（dry-run） | 准备流程正常执行 |
+
+### 常见问题
+
+| 现象 | 原因 | 解决 |
+|------|------|------|
+| Dashboard 显示"后端离线" | 后端未启动 | 确认 `odp-backend` 在运行 |
+| 下拉框无法滚动/遮挡 | CSS 层级问题 | 刷新页面（Ctrl+F5） |
+| 模型加载失败 | 模型文件不存在 | 先确认 `data/models/checkpoints/` 下有 .pt 文件 |
+| 数据集浏览无数据 | 数据集不存在或路径不对 | 先运行 `odp-transform` 转换数据 |
+
+---
+
+## 九、集成命令（D3 + D4 + D5 串联）
 
 ### 端到端训练准备
 
@@ -348,7 +424,7 @@ odp-train --dry-run
 
 ---
 
-## 八、回归测试
+## 十、回归测试
 
 ```bash
 # 从 apps/platform/src 目录运行
@@ -358,7 +434,7 @@ python -m pytest tests -v
 
 ---
 
-## 九、关键目录结构
+## 十一、关键目录结构
 
 ```
 ODPlatform/
@@ -370,7 +446,9 @@ ODPlatform/
 │   │   │   ├── transform_data.py   # odp-transform （D3）
 │   │   │   ├── validate_data.py    # odp-validate （D4）
 │   │   │   ├── config_cli.py       # odp-config （D5）
-│   │   │   └── train.py            # odp-train （集成）
+│   │   │   ├── train.py            # odp-train （集成）
+│   │   │   ├── backend.py          # odp-backend （FastAPI）
+│   │   │   └── webui.py            # odp-webui （Gradio）
 │   │   ├── common/
 │   │   │   ├── paths.py
 │   │   │   ├── constants.py
@@ -405,6 +483,11 @@ ODPlatform/
 │   │   │   ├── validation_tab.py
 │   │   │   ├── config_tab.py
 │   │   │   └── utils.py
+│   │   ├── training/       模型训练
+│   │   ├── evaluation/     模型评估
+│   │   ├── inference/      模型推理
+│   │   │   ├── engine.py      推理引擎
+│   │   │   └── visualizer.py  可视化工具
 │   │   └── __init__.py
 │   ├── configs/
 │   │   ├── datasets/               # 数据集 yaml

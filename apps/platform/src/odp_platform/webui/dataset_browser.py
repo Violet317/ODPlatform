@@ -127,14 +127,14 @@ def _preview(dataset: str, split: str, index: int) -> tuple[Image.Image | None, 
     return vis, status
 
 
-def _dataset_changed(dataset: str, split: str) -> tuple[
-    list[list[str]],
-    gr.update,
-    Image.Image | None,
-    str,
-]:
+def _dataset_changed(dataset: str, split: str):
     if not dataset:
-        return [], gr.update(maximum=1, value=0, interactive=False), None, "无数据集"
+        return (
+            [],
+            gr.update(maximum=1, value=0, interactive=False),
+            None,
+            "无数据集",
+        )
     _, images, _ = _split_images(dataset, split)
     slider = gr.update(
         maximum=max(len(images) - 1, 1),
@@ -145,26 +145,35 @@ def _dataset_changed(dataset: str, split: str) -> tuple[
     return _dataset_info(dataset), slider, image, status
 
 
-def _refresh_datasets() -> tuple[gr.update, list[list[str]], gr.update, None, str]:
+def _refresh_datasets():
     datasets = list_dataset_names()
     value = datasets[0] if datasets else None
-    info, slider, _, status = _dataset_changed(value, "train") if value else (
-        [],
-        gr.update(maximum=1, value=0, interactive=False),
-        None,
-        "无数据集",
-    )
-    return gr.update(choices=datasets, value=value), info, slider, None, status
+    if value:
+        info, slider, _, status = _dataset_changed(value, "train")
+    else:
+        info, slider, _, status = (
+            [],
+            gr.update(maximum=1, value=0, interactive=False),
+            None,
+            "无数据集",
+        )
+    return gr.update(choices=datasets, value=value, interactive=True), info, slider, None, status
 
 
 def create_dataset_browser_ui() -> None:
     datasets = list_dataset_names()
     initial_dataset = datasets[0] if datasets else None
-    initial_info, initial_slider, initial_image, initial_status = (
-        _dataset_changed(initial_dataset, "train")
-        if initial_dataset
-        else ([], gr.update(maximum=1, value=0, interactive=False), None, "无数据集")
-    )
+    if initial_dataset:
+        initial_info, initial_slider, initial_image, initial_status = _dataset_changed(
+            initial_dataset, "train"
+        )
+    else:
+        initial_info, initial_slider, initial_image, initial_status = (
+            [],
+            gr.Slider(maximum=1, value=0, interactive=False),
+            None,
+            "无数据集",
+        )
 
     with gr.Row(elem_classes=["odp-row", "odp-row-four"]):
         refresh_btn = gr.Button("刷新")
@@ -202,7 +211,7 @@ def create_dataset_browser_ui() -> None:
             interactive=False,
             scale=2,
             max_lines=1,
-            html_attributes={"wrap": "off"},
+            elem_classes=["odp-status"],
         )
     image_out = gr.Image(label="预览", value=initial_image, type="pil")
 

@@ -57,9 +57,9 @@ def _run_training(
     return result.render()
 
 
-def _refresh_datasets() -> gr.update:
+def _refresh_datasets():
     datasets = list_dataset_names()
-    return gr.update(choices=datasets, value=datasets[0] if datasets else None)
+    return gr.update(choices=datasets, value=datasets[0] if datasets else None, interactive=True)
 
 
 def create_training_ui() -> None:

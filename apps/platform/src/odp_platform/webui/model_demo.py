@@ -8,12 +8,12 @@ import gradio as gr
 from odp_platform.webui.utils import list_model_files
 
 
-def _refresh_models() -> gr.update:
+def _refresh_models():
     models = list_model_files()
-    return gr.update(choices=models, value=models[0] if models else None)
+    return gr.update(choices=models, value=models[0] if models else None, interactive=True)
 
 
-def _load_model(model_path: str) -> tuple[Any | None, str, gr.update]:
+def _load_model(model_path: str):
     if not model_path:
         return None, "未选择模型", gr.update(interactive=False)
     try:
@@ -85,7 +85,7 @@ def create_model_demo_ui() -> None:
             interactive=False,
             scale=2,
             max_lines=1,
-            html_attributes={"wrap": "off"},
+            elem_classes=["odp-status"],
         )
     with gr.Row(elem_classes=["odp-row", "odp-row-two"]):
         conf_slider = gr.Slider(0.01, 0.99, 0.25, step=0.01, label="Confidence")

@@ -24,13 +24,23 @@ env/
 .DS_Store
 Thumbs.db
 
-# Data (large files)
-data/
+# Data - ignore large/runtime subdirectories (individual rules to allow LFS tracking)
+/data/raw/
+/data/train/
+/data/val/
+/data/test/
+/data/runs/
+/data/yolo/
+/data/backend/
+/data/RSOD/
+/data/DIOR/
+/data/coco128/
+/data/models/pretrained/
 !data/README.md
 
-# Models (use Git LFS)
-models/
-!models/README.md
+# Models (use Git LFS) - root-level models dir
+/models/
+!/models/README.md
 
 # Training outputs
 runs/
@@ -65,3 +75,7 @@ coverage.xml
 *.rar
 *.zip
 *.7z
+
+# Teaching / student docs (not for main repo)
+docs/teaching/
+【*/

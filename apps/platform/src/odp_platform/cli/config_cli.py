@@ -12,6 +12,16 @@ import logging
 logger = logging.getLogger("odp-config")
 
 
+def _resolve_config_path(raw: str) -> Path:
+    p = Path(raw)
+    if p.exists() or p.is_absolute():
+        return p
+    alt = CONFIGS_DIR / p.name
+    if alt.exists():
+        return alt
+    return p
+
+
 def main():
     try:
         _main()
@@ -79,9 +89,14 @@ def _main():
 
     if args.command == "generate":
         output = args.output or str(CONFIGS_DIR / f"{args.task}_config.yaml")
+        output_path = Path(output)
+        if args.output and not output_path.parent.exists():
+            alt = CONFIGS_DIR / output_path.name
+            if alt.parent.exists():
+                output_path = alt
         result = generate_template_to_file(
             task=args.task,
-            output_path=Path(output),
+            output_path=output_path,
             force=args.force,
             backup=not args.no_backup,
         )
@@ -90,7 +105,7 @@ def _main():
     elif args.command == "validate":
         bundle = build_config(
             task=args.task,
-            yaml_path=Path(args.config),
+            yaml_path=_resolve_config_path(args.config),
             preview_only=args.preview,
         )
         if bundle.errors:
@@ -110,7 +125,7 @@ def _main():
     elif args.command == "trace":
         bundle = build_config(
             task=args.task,
-            yaml_path=Path(args.config),
+            yaml_path=_resolve_config_path(args.config),
             preview_only=True,
         )
         print(f"\n配置来源追溯 — 任务: {args.task}\n")
@@ -127,7 +142,7 @@ def _main():
         if args.snapshot_cmd == "export":
             bundle = build_config(
                 task=args.task,
-                yaml_path=Path(args.yaml),
+                yaml_path=_resolve_config_path(args.yaml),
                 preview_only=True,
             )
             if bundle.errors:

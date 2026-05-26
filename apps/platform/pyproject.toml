@@ -62,6 +62,7 @@ odp-validate = "odp_platform.cli.validate_data:main"
 odp-config = "odp_platform.cli.config_cli:main"
 odp-train = "odp_platform.cli.train:main"
 odp-val = "odp_platform.cli.val:main"
+odp-infer = "odp_platform.cli.infer:main"
 odp-webui = "odp_platform.webui.app:main"
 odp-backend = "odp_platform.cli.backend:main"
 

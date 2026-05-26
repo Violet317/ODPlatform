@@ -350,3 +350,217 @@ ruff format apps/platform/src/
 4. **数据集路径**：自动由 `paths.py` 管理，手动配置用 `odp_meta.dataset` 字段
 5. **日志**：运行时日志在 `apps/platform/logging/webui/` 下，按时间命名
 6. **版本号**：在 `_version.py` 中维护（`__version__ = "0.1.0"`）
+
+---
+
+## 十三、⚠️ 重大变更：双层架构（2026-05-26）
+
+### 架构变更
+
+从原来的「Gradio WebUI + FastAPI（实验管理）」改为：
+
+```
+用户（浏览器）
+    │
+    ▼
+Streamlit Web 前端（apps/web-frontend/app.py）
+    │  ┌─ 用户层（默认）：图像检测 / 检测结果 / 模型选择 / LLM对话 / 用户信息
+    │  └─ 管理员层（⚙️密码0000）：工作台 / 训练 / 校验 / 配置 / 数据浏览 / 模型演示
+    │
+    ▼
+FastAPI 后端（apps/web-backend/main.py）
+    │  /api/v1/auth/*          — 登录注册
+    │  /api/v1/detection/*     — 检测任务
+    │  /api/v1/models/*        — 模型管理
+    │  /api/v1/llm/*           — LLM 对话透传
+    │  /api/v1/users/*         — 用户信息
+    │  /api/experiments/*      — 实验管理（原有，保留）
+    │
+    ▼
+odp_platform 核心层（不变）
+    ├── training/              # ← PR #3 新增（experiment/recipe/callbacks/tracker）
+    ├── cli/train.py           # odp-train CLI
+    ├── data_pipeline/         # D3 数据转换
+    ├── data_validation/       # D4 数据校验
+    ├── run_config/            # D5 配置管理
+    └── webui/                 # Gradio WebUI（管理员层 import 使用）
+```
+
+### 新增目录
+
+```
+apps/
+├── web-backend/          # FastAPI 后端（新）
+│   ├── main.py
+│   ├── api/auth.py, detection.py, llm.py, models_api.py, users_api.py
+│   └── db/init_db.py
+├── web-frontend/         # Streamlit 前端（新）
+│   ├── app.py
+│   ├── pages/user/page_detection.py, page_results.py, page_models.py, page_llm.py, page_profile.py
+│   └── api/client.py
+└── platform/             # 核心层（原有，不变）
+```
+
+### 一键启动（项目根目录）
+
+```bash
+# 方式 1：Python 脚本
+python launch.py
+
+# 方式 2：双击批处理
+start.bat
+```
+
+两个脚本在 `launch.py` 和 `start.bat`，已存在项目根目录。
+
+---
+
+## 十四、PR #3 代码审查记录（2026-05-26）
+
+### PR 信息
+
+- 来源：`XDPoist` 的 fork
+- 分支名：`pr-3`
+- 标题：`feat: add training experiment infrastructure`
+- 文件数：5 个，共 2198 行新增
+- 位置：`apps/platform/src/odp_platform/training/`
+
+### 文件清单
+
+| 文件 | 行数 | 功能 |
+|------|------|------|
+| `training/__init__.py` | 0 | 空包文件 |
+| `training/experiment.py` | 616 | 实验配置 + 运行入口 + 结果解析 |
+| `training/recipe.py` | 377 | 预置实验模板（RSOD/VisDrone baseline + sweep） |
+| `training/callbacks.py` | 609 | 回调系统（EarlyStopping + Checkpoint + 后端通信） |
+| `training/tracker.py` | 596 | 实验结果收集 + CSV 对比导出 |
+
+### 依赖项
+
+- `odp_platform.common.paths` → 已有 ✅
+- `odp_platform.common.logging_utils` → 已有 ✅
+- `odp_platform.training.hooks` → **不存在**（用 `try/except` 安全降级）✅
+- `requests`（callbacks.py 向后端发 HTTP）→ 标准库外，需安装
+- `odp-train` CLI（experiment.py 通过 subprocess 调用）→ **已有**（`cli/train.py`）
+
+### 审查结论
+
+代码质量良好，无阻塞性问题。建议：
+
+1. **补充 `hooks.py`**（可选）或保持 `try/except` 降级现状
+2. 确保 `requests` 在依赖中
+3. 数据集的 `rsod`/`visdrone` 需重新下载后才能跑通完整实验
+
+### 合并状态
+
+**尚未合并到 main**（用户正在决定中）。当前 `main` 分支不包含 training/ 目录。
+
+---
+
+## 十五、本地环境关键信息（2026-05-26 快照）
+
+### 数据集状态
+
+| 数据集 | 状态 | 操作 |
+|--------|------|------|
+| `rsod` | ❌ **丢失**（需重新下载） | `odp-transform --dataset rsod --format pascal_voc` |
+| `visdrone` | ❌ **丢失**（需重新下载） | 需先准备原始数据到 `data/raw/visdrone/` |
+| 其他测试集 | ❌ **丢失** | 需重新准备 |
+
+### Git 状态
+
+| 项目 | 值 |
+|------|-----|
+| 当前分支 | `main` |
+| 远程 | `origin https://github.com/wuwo1979/ODPlatform.git` |
+| 本地 vs 远程 | `git diff HEAD origin/main` 应为空 |
+| 未跟踪文件 | `launch.py`, `start.bat` |
+
+### Conda 环境
+
+```
+环境名：odp-gpu
+Python：3.10+
+路径：E:\Anaconda\envs\odp-gpu\
+```
+
+---
+
+## 十六、⚠️ 血泪教训：git checkout PR 分支会删文件
+
+### 问题现象
+
+2026-05-26 执行 `git checkout pr-3` 后，以下文件被删除：
+- `docs/` 全部文档
+- `apps/platform/configs/` 全部配置
+- `apps/platform/src/odp_platform/data_pipeline/`、`run_config/`、`data_validation/` 等
+- `data/` 下的数据集文件（**不可恢复**，因为不在 git 跟踪中）
+
+### 原因
+
+`pr-3` 分支**只包含 5 个 training 文件**。切过去时，git 把工作目录中所有不属于 pr-3 的文件删掉了。
+
+### 恢复方法
+
+```bash
+# 立即切回 main
+git checkout main
+# 强制执行 restore
+git restore .
+```
+
+### 预防措施
+
+**永远不要**用 `git checkout pr-<编号>` 切分支。改用：
+
+```bash
+# ✅ 安全做法：只提取 PR 代码查看
+git fetch origin pull/3/head:pr-3
+git diff main...pr-3 --stat         # 只看变更统计
+git diff main...pr-3 -- file/path   # 只看某个文件
+git show pr-3:path/to/file          # 查看单个文件内容
+
+# 如果要真正切过去，先 stash 或备份
+git stash
+git checkout pr-3
+# 看完了立刻
+git checkout main
+git stash pop
+```
+
+---
+
+## 十七、待办事项（下一次 AI 会话）
+
+### 优先级 P0：恢复数据集
+
+```bash
+conda activate odp-gpu
+cd F:\python_projects\class\ODPlatform
+
+# 下载 rsod 原始数据到 data/raw/rsod/
+# 然后：
+odp-transform --dataset rsod --format pascal_voc
+odp-validate --dataset rsod
+```
+
+### 优先级 P1：PR #3 决策
+
+- 审阅代码 ✅（已做）
+- 决定是否合并到 main
+- 如合并：`git merge pr-3`
+- 验证：`python -c "from odp_platform.training.experiment import ExperimentConfig; print('OK')"`
+
+### 优先级 P2：启动脚本 → exe 打包
+
+```bash
+# 用 PyInstaller 把 launch.py 打包为 exe
+pip install pyinstaller
+pyinstaller --onefile --console launch.py -n ODPlatform
+```
+
+### 优先级 P3：双层架构联调
+
+- 后端 5 个 API（auth/detection/models/llm/users）
+- 前端 5 个用户 Tab + 管理员层 import 已有 webui
+- 确认一键启动 `python launch.py` 能正常工作

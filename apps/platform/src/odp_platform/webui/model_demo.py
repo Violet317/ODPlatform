@@ -8,9 +8,17 @@ import gradio as gr
 from odp_platform.webui.utils import list_model_files
 
 
+def _model_dropdown_choices(models: list[str]) -> list[tuple[str, str]]:
+    return [(Path(model_path).name, model_path) for model_path in models]
+
+
 def _refresh_models():
     models = list_model_files()
-    return gr.update(choices=models, value=models[0] if models else None, interactive=True)
+    return gr.update(
+        choices=_model_dropdown_choices(models),
+        value=models[0] if models else None,
+        interactive=True,
+    )
 
 
 def _load_model(model_path: str):
@@ -68,14 +76,16 @@ def _run_inference(
 
 def create_model_demo_ui() -> None:
     models = list_model_files()
+    model_options = _model_dropdown_choices(models)
     detector_state = gr.State(None)
 
     with gr.Row(elem_classes=["odp-row", "odp-row-four"]):
         refresh_btn = gr.Button("刷新")
         model_dd = gr.Dropdown(
             label="模型",
-            choices=models,
+            choices=model_options,
             value=models[0] if models else None,
+            filterable=False,
             interactive=True,
         )
         load_btn = gr.Button("加载", variant="primary")

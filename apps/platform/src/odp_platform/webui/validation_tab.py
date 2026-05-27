@@ -36,12 +36,14 @@ def create_validation_ui() -> None:
             label="数据集",
             choices=datasets,
             value=datasets[0] if datasets else None,
+            filterable=False,
             interactive=True,
         )
         task_dd = gr.Dropdown(
             label="任务",
             choices=["auto", "detect", "segment"],
             value="auto",
+            filterable=False,
             interactive=True,
         )
         verbose = gr.Checkbox(label="Verbose", value=False)

@@ -70,6 +70,7 @@ def create_training_ui() -> None:
             label="数据集",
             choices=datasets,
             value=datasets[0] if datasets else None,
+            filterable=False,
             interactive=True,
         )
         experiment_name = gr.Textbox(

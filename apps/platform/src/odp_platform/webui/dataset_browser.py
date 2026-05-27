@@ -164,13 +164,12 @@ def create_dataset_browser_ui() -> None:
     datasets = list_dataset_names()
     initial_dataset = datasets[0] if datasets else None
     if initial_dataset:
-        initial_info, initial_slider, initial_image, initial_status = _dataset_changed(
+        initial_info, _, initial_image, initial_status = _dataset_changed(
             initial_dataset, "train"
         )
     else:
-        initial_info, initial_slider, initial_image, initial_status = (
+        initial_info, initial_image, initial_status = (
             [],
-            gr.Slider(maximum=1, value=0, interactive=False),
             None,
             "无数据集",
         )
@@ -181,6 +180,7 @@ def create_dataset_browser_ui() -> None:
             label="数据集",
             choices=datasets,
             value=initial_dataset,
+            filterable=False,
             interactive=True,
         )
         split_dd = gr.Radio(

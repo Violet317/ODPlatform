@@ -56,6 +56,7 @@ def create_config_ui() -> None:
             label="任务",
             choices=CONFIG_TASKS,
             value="train",
+            filterable=False,
             interactive=True,
         )
         output_path = gr.Textbox(
@@ -73,6 +74,7 @@ def create_config_ui() -> None:
             label="配置文件",
             choices=configs,
             value=configs[0] if configs else None,
+            filterable=False,
             interactive=True,
             scale=2,
         )
@@ -80,6 +82,7 @@ def create_config_ui() -> None:
             label="验证任务",
             choices=CONFIG_TASKS,
             value="train",
+            filterable=False,
             interactive=True,
         )
         preview = gr.Checkbox(label="Preview", value=False)

@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import logging
-import subprocess
 import sys
-import time
-import urllib.request
 from pathlib import Path
 
 if __package__ in {None, ""}:
@@ -13,9 +10,10 @@ if __package__ in {None, ""}:
 import gradio as gr
 
 from odp_platform.common.logging_utils import get_logger
-from odp_platform.common.paths import LOGGING_DIR, ROOT_DIR
+from odp_platform.common.paths import LOGGING_DIR
 from odp_platform.webui.config_tab import create_config_ui
 from odp_platform.webui.dashboard import create_dashboard_ui
+from odp_platform.webui.dataset_analysis import create_dataset_analysis_ui
 from odp_platform.webui.dataset_browser import create_dataset_browser_ui
 from odp_platform.webui.model_demo import create_model_demo_ui
 from odp_platform.webui.training_tab import create_training_ui
@@ -1284,7 +1282,6 @@ def _ensure_backend_running(timeout: float = 10.0) -> bool:
 
 
 def main() -> None:
-    _ensure_backend_running()
     create_app().launch(
         server_name="0.0.0.0",
         server_port=7860,

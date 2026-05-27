@@ -66,6 +66,7 @@ def generate_template_to_file(task: str, output_path: Path, force: bool = False,
         bak = output_path.with_suffix(f".bak.{datetime.now().strftime('%Y%m%d%H%M%S')}.yaml")
         output_path.rename(bak)
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     content = generate_template(task)
     output_path.write_text(content, encoding="utf-8")
     return f"已写入: {output_path}"
